@@ -5,7 +5,7 @@
 
 
 
-* Markdown te permite usar **negritas, títulos, listas, código, links**, y se ve bien en GitHub o cualquier repositorio.
+
 
 ---
 
