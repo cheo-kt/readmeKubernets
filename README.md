@@ -3,189 +3,147 @@
 ## Sergio Fernando Florez Sanabria A00396046
 
 
+## Prerequisites
 
-
-
-
----
-
-### 📝 README Detallado: Creación de Cluster AKS
-
-````markdown
-# AKS Cluster Deployment - Sergio Florez
-
-This document describes the step-by-step process of creating a basic Azure Kubernetes Service (AKS) cluster, deploying a sample Nginx application, and verifying its functionality.
+- Azure subscription  
+- Azure CLI installed (`az`)  
+- Terraform installed (`terraform`)  
+- `kubectl` installed  
+- Lens installed on Windows  
 
 ---
 
-## 1. Prerequisites
+## Steps
 
-- Azure subscription
-- Azure CLI installed (`az`)
-- Ubuntu machine or terminal
-- Access to install `kubectl`
-
----
-
-## 2. Step 1: Login to Azure
-
-Login to your Azure account using:
-
+### 1. Authenticate with Azure
 ```bash
 az login
 ````
 
-If no browser is available:
+Make sure your subscription is selected:
 
 ```bash
-az login --use-device-code
+az account set --subscription "<your-subscription-id>"
 ```
 
 ---
 
-## 3. Step 2: Create Resource Group
-
-Create a resource group for the AKS cluster:
+### 2. Clone the repository
 
 ```bash
-az group create --name aks_sergioflorez_resource_group_plataformas --location eastus
+git clone https://github.com/cheo-kt/readmeKubernets.git
+cd readmeKubernets
 ```
-
-> **Note:** Resource group is a container for all Azure resources.
 
 ---
 
-## 4. Step 3: Create AKS Cluster
+### 3. Terraform configuration files
 
-Create the AKS cluster with 1 node and monitoring enabled:
+The main files are:
 
-```bash
-az aks create \
-  --resource-group aks_sergioflorez_resource_group_plataformas \
-  --name myAKSCluster \
-  --node-count 1 \
-  --enable-addons monitoring \
-  --generate-ssh-keys
-```
-
-> **Expected time:** \~5-10 minutes for the cluster to be provisioned.
+* `main.tf` → Defines Azure resources (Resource Group + AKS cluster)
+* `versions.tf` → Specifies Terraform and provider versions
+* `README.md` → Documentation
 
 ---
 
-## 5. Step 4: Connect to the Cluster
+### 4. Initialize Terraform
 
-Configure `kubectl` to connect to your AKS cluster:
+```bash
+terraform init
+```
+
+---
+
+### 5. Plan infrastructure
+
+```bash
+terraform plan -out plan.tfplan
+```
+
+---
+
+### 6. Apply the plan
+
+```bash
+terraform apply plan.tfplan
+```
+
+This step may take **5–10 minutes** while Azure provisions the AKS cluster.
+
+---
+
+### 7. Get AKS credentials
 
 ```bash
 az aks get-credentials --resource-group aks_sergioflorez_resource_group_plataformas --name myAKSCluster
 ```
 
-> You should see:
-
-```
-Merged "myAKSCluster" as current context in /home/sergio/.kube/config
-```
-
----
-
-## 6. Step 5: Install kubectl (if not installed)
-
-If `kubectl` is missing:
-
-```bash
-sudo snap install kubectl --classic
-```
-
-Verify installation:
-
-```bash
-kubectl version --client
-```
-
----
-
-## 7. Step 6: Verify Cluster Nodes
-
-Check that the node is ready:
+Verify the nodes:
 
 ```bash
 kubectl get nodes
 ```
 
-Expected output: your node should be listed and in `Ready` state.
-
 ---
 
-## 8. Step 7: Deploy a Test Application (Nginx)
-
-Create the deployment:
+### 8. Deploy a test application (optional)
 
 ```bash
 kubectl create deployment my-nginx --image=nginx
-```
-
-Expose the deployment as a LoadBalancer service:
-
-```bash
 kubectl expose deployment my-nginx --port=80 --type=LoadBalancer
-```
-
-Check the service:
-
-```bash
 kubectl get service my-nginx
 ```
 
-You should see something like:
+Copy the **EXTERNAL-IP** and test it in the browser:
 
-| NAME     | TYPE         | CLUSTER-IP | EXTERNAL-IP     | PORT(S)      | AGE |
-| -------- | ------------ | ---------- | --------------- | ------------ | --- |
-| my-nginx | LoadBalancer | 10.0.70.5  | 172.210.127.141 | 80:31392/TCP | 30s |
-
-> Open `http://172.210.127.141` in your browser to see the Nginx welcome page.
-
----
-<img width="1600" height="771" alt="image" src="https://github.com/user-attachments/assets/7f6f3a75-85e3-4660-8382-109451f8ac83" />
-
-## 9. Step 8: Verify in Azure Portal
-
-* Go to [Azure Portal](https://portal.azure.com) → Kubernetes services.
-* Your cluster `myAKSCluster` should appear.
-* Nodes, monitoring, and configuration can be checked here.
-* Note: Nginx LoadBalancer IP is only visible via `kubectl`.
+```
+http://<EXTERNAL-IP>
+```
 
 ---
 
-## 10. Step 9: Clean Up Resources
+### 9. Connect AKS cluster to Lens (Windows)
 
-To delete the cluster and all related resources:
+Since the cluster was created in **Ubuntu (WSL)**, we need to copy the kubeconfig file to Windows:
 
 ```bash
-az group delete --name aks_sergioflorez_resource_group_plataformas --yes --no-wait
+cp ~/.kube/config /mnt/c/Users/<your-user>/config-aks
 ```
+
+Then in Lens:
+
+1. Open **Lens**
+2. Go to **File → Add Cluster**
+3. Select the file `C:\Users\<your-user>\config-aks`
+4. The cluster will appear in Lens with full access
 
 ---
 
-## 11. Notes / Common Issues
+## Notes
 
-* `kubectl not found`: solved by installing with snap or apt.
-* `EXTERNAL-IP <pending>`: wait a few minutes for Azure to assign a public IP.
-* Cluster creation can take up to 10-15 minutes depending on region and Azure load.
+* The `.terraform/` directory and provider binaries should not be committed to Git. Use a `.gitignore` file to exclude them.
+* GitHub has a **100 MB file size limit**, so never push provider binaries.
 
 ---
-<img width="1600" height="613" alt="image" src="https://github.com/user-attachments/assets/ec347bbe-c276-4146-8e66-448789750469" />
 
-
-##**12. Azure page**
-<img width="1600" height="856" alt="image" src="https://github.com/user-attachments/assets/ed0b5c19-ca64-4825-9d79-a64a3391ffac" />
-<img width="1600" height="852" alt="image" src="https://github.com/user-attachments/assets/31db761a-b240-4b97-ab26-76db57d560f0" />
-
-
-## 13. References
-
-* [Azure AKS Documentation](https://learn.microsoft.com/en-us/azure/aks/)
-* [Kubernetes Documentation](https://kubernetes.io/docs/)
+## Repository Structure
 
 ```
+readmeKubernets/
+│-- main.tf
+│-- versions.tf
+│-- README.md
+│-- .gitignore
+```
+
+
+## photos
+
+<img width="1600" height="846" alt="image" src="https://github.com/user-attachments/assets/2e4c6cb3-abc5-4ce1-87e4-f64ef8a353f4" />
+
+<img width="1600" height="863" alt="image" src="https://github.com/user-attachments/assets/120327ee-dc9d-4ba3-803b-d8ab4e8e4a59" />
+<img width="1600" height="900" alt="image" src="https://github.com/user-attachments/assets/dc720a86-e655-40f3-9a5c-39bb446dd10e" />
+
 
 
